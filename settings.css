@@ -1,0 +1,33 @@
+/* settings.css — 設定面板額外樣式 */
+
+/* checkbox 開關外觀 */
+#themeToggle {
+    width: auto;
+    margin-top: 0;
+    accent-color: var(--accent);
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.setting-group label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 15px;
+    color: var(--text);
+}
+
+.setting-group label input[type="password"],
+.setting-group label select {
+    margin-top: 0;
+    flex: 1;
+    margin-left: 12px;
+}
+
+/* API key 輸入框 */
+#apiKeyInput {
+    font-family: monospace;
+    font-size: 13px;
+    letter-spacing: 0.05em;
+}

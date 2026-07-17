@@ -1,0 +1,6 @@
+/* chat.css — 聊天相關補充（主要樣式在 main.css）*/
+
+/* 頭像與 logo 互動 */
+.avatar        { cursor: pointer; }
+.welcome-logo  { cursor: pointer; }
+#statusText    { cursor: pointer; }
