@@ -1,0 +1,234 @@
+import {
+    sendChatMessage
+} from "../api/openrouter.js";
+
+import {
+    showToast
+} from "../ui/toast.js";
+
+import {
+    extractAndSaveMemory
+} from "../memory/memory.js";
+
+import {
+    XIAOKE_SYSTEM_PROMPT
+} from "../config/prompts.js";
+
+import { generateDiaryEntry } from "../memory/diary.js";
+
+import { getProfileContext } from "../memory/profile.js";
+
+import { getAllMemories } from "../memory/memory.js";
+
+import { getChapterContext, tryGenerateChapter } from "../memory/chapters.js";
+
+import { saveMessage, loadMessages } from "../api/supabase.js";
+
+const messagesContainer =
+    document.getElementById("messages");
+
+const input =
+    document.getElementById("userInput");
+
+const sendBtn =
+    document.getElementById("sendBtn");
+
+let chatHistory = [];
+
+
+// ======================================
+// Init
+// ======================================
+
+export function initChat() {
+
+    sendBtn?.addEventListener(
+        "click",
+        sendUserMessage
+    );
+
+    input?.addEventListener(
+        "keydown",
+        (e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                sendUserMessage();
+            }
+        }
+    );
+
+}
+
+
+// ======================================
+// Send
+// ======================================
+
+async function sendUserMessage() {
+
+    const text = input.value.trim();
+    if (!text) return;
+
+    addMessage("user", text);
+
+    chatHistory.push({
+        role: "user",
+        content: text
+    });
+
+    input.value = "";
+
+    const loadingBubble = addTypingBubble();
+
+    try {
+
+// 取記憶庫
+        const memories = (await getAllMemories()).slice(0, 15);
+        const memoryText = memories.length > 0
+            ? "\n\n【記憶庫】\n" + memories.map(m => `- ${m.content}`).join("\n")
+            : "";
+
+        // 動態截斷：情緒關鍵詞時多保留
+        const emotionWords = ["難過", "哭", "委屈", "害怕", "崩潰", "煩", "累", "痛","喜欢","爱你"];
+        const isEmotional = emotionWords.some(w => text.includes(w));
+        const limit = isEmotional ? 30 : 20;
+        const recentHistory = chatHistory.slice(-limit);
+
+        const chapterContext = getChapterContext();
+
+        const systemContent = XIAOKE_SYSTEM_PROMPT + "\n\n" + getProfileContext();
+
+        const messagesWithSystem = [
+            {
+                role: "system",
+                content: systemContent + chapterContext + memoryText
+            },
+            ...recentHistory
+        ];
+
+
+        const result = await sendChatMessage(messagesWithSystem);
+
+        loadingBubble.remove();
+
+        addMessage("assistant", result.text);
+
+        chatHistory.push({
+            role: "assistant",
+            content: result.text
+        });
+
+        saveChatHistory();
+
+        // 自動提取記憶（背景執行，不影響聊天）
+        extractAndSaveMemory(text, result.text);
+        generateDiaryEntry(chatHistory);
+
+tryGenerateChapter(chatHistory);
+
+    } catch (error) {
+
+        loadingBubble.remove();
+        showToast("回覆失敗：" + (error.message || "未知錯誤"));
+        console.error(error);
+
+    }
+
+}
+
+
+// ======================================
+// Message Bubble
+// ======================================
+
+function addMessage(role, content) {
+
+    removeWelcome();
+
+    const bubble = document.createElement("div");
+    bubble.className = `message ${role}`;
+    bubble.innerHTML = `
+        <div class="bubble">
+            ${escapeHtml(content)}
+        </div>
+    `;
+
+    messagesContainer.appendChild(bubble);
+    scrollBottom();
+
+}
+
+
+// ======================================
+// Typing
+// ======================================
+
+function addTypingBubble() {
+
+    removeWelcome();
+
+    const bubble = document.createElement("div");
+    bubble.className = "message assistant";
+    bubble.innerHTML = `
+        <div class="bubble typing">
+            小克正在思考...
+        </div>
+    `;
+
+    messagesContainer.appendChild(bubble);
+    scrollBottom();
+
+    return bubble;
+
+}
+
+
+// ======================================
+// History
+// ======================================
+
+export async function loadChatHistory() {
+    try {
+        const messages = await loadMessages();
+        if (!messages || messages.length === 0) return;
+        chatHistory = messages.map(m => ({
+            role: m.role,
+            content: m.content,
+            date: m.date
+        }));
+        removeWelcome();
+        chatHistory.forEach(msg => {
+            addMessage(msg.role, msg.content);
+        });
+    } catch (e) {
+        console.error("[chat] 載入失敗", e);
+    }
+}
+
+async function saveChatHistory() {
+    const today = new Date().toLocaleDateString("zh-TW");
+    const lastMsg = chatHistory[chatHistory.length - 1];
+    if (!lastMsg) return;
+    await saveMessage(lastMsg.role, lastMsg.content, today);
+}
+
+
+// ======================================
+// Utils
+// ======================================
+
+function scrollBottom() {
+    messagesContainer.scrollTop =
+        messagesContainer.scrollHeight;
+}
+
+function removeWelcome() {
+    const welcome = document.querySelector(".welcome");
+    if (welcome) welcome.remove();
+}
+
+function escapeHtml(text) {
+    const div = document.createElement("div");
+    div.textContent = text;
+    return div.innerHTML;
+}
