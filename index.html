@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<title>小克 v2.0</title>
+
+<!-- CSS -->
+<link rel="stylesheet" href="./css/main.css">
+<link rel="stylesheet" href="./css/chat.css">
+<link rel="stylesheet" href="./css/timer.css">
+<link rel="stylesheet" href="./css/guide.css">
+<link rel="stylesheet" href="./css/settings.css">
+
+<!-- DEBUG 錯誤顯示器（開發用） -->
+<style>
+#debugErrorBox {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    max-height: 50vh;
+    overflow-y: auto;
+    background: #ff3b30;
+    color: #fff;
+    font-family: monospace;
+    font-size: 13px;
+    padding: 12px;
+    z-index: 999999;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+</style>
+<script>
+window.addEventListener("error", function (e) {
+    const box = document.getElementById("debugErrorBox");
+    if (!box) return;
+    box.style.display = "block";
+    box.textContent +=
+        "❌ 錯誤：" + e.message +
+        "\n📄 檔案：" + e.filename +
+        "\n📍 行號：" + e.lineno + ":" + e.colno + "\n\n";
+});
+window.addEventListener("unhandledrejection", function (e) {
+    const box = document.getElementById("debugErrorBox");
+    if (!box) return;
+    box.style.display = "block";
+    box.textContent +=
+        "❌ Promise 錯誤：" + (e.reason?.message || e.reason) + "\n\n";
+});
+</script>
+
+</head>
+
+<body data-theme="dark">
+
+<div id="debugErrorBox"></div>
+
+
+<!-- =========================
+HEADER
+========================= -->
+<header class="header">
+
+    <div class="header-left">
+        <div class="avatar">
+            <div class="avatar-inner"></div>
+        </div>
+        <div class="header-info">
+            <h1>小克</h1>
+            <p id="statusText">在這裡陪著你</p>
+        </div>
+    </div>
+
+    <div class="header-right">
+        <button id="memoryBtn">🧠</button>
+        <button id="usageBtn">📊</button>
+        <button id="settingsBtn">⚙️</button>
+    </div>
+
+</header>
+
+
+<!-- =========================
+TIMER
+========================= -->
+<section id="timerSection">
+
+    <div id="timerCollapsed" class="timer-collapsed">
+        <span id="timerDisplay">45:00</span>
+        <span class="timer-expand-hint">點擊展開</span>
+    </div>
+
+    <div id="timerExpanded" class="timer-expanded">
+        <div id="timerDisplayFull"></div>
+        <div class="timer-actions">
+            <button data-minutes="25">25分鐘</button>
+            <button data-minutes="45" class="active">45分鐘</button>
+            <button data-minutes="60">60分鐘</button>
+            <button id="customTimerBtn" type="button">自訂</button>
+            <button id="stopTimerBtn">停止</button>
+        </div>
+    </div>
+
+</section>
+
+<!-- 自訂時間彈窗 -->
+<dialog id="customTimerDialog">
+    <form>
+        <h3>設定專注時長</h3>
+        <input
+            type="number"
+            id="customMinutesInput"
+            min="1"
+            max="180"
+            step="1"
+            placeholder="1-180 分鐘"
+            autofocus
+        >
+        <div class="dialog-actions">
+            <button id="cancelCustomTimer" type="button">取消</button>
+            <button id="confirmCustomTimer" type="button">開始</button>
+        </div>
+    </form>
+</dialog>
+
+
+<!-- =========================
+MESSAGES
+========================= -->
+<main id="messages">
+    <div class="welcome">
+        <div class="welcome-logo">小克</div>
+        <h2>歡迎回來</h2>
+        <p>學習累了就說話。<br>不用一個人撐著。</p>
+    </div>
+</main>
+
+
+<!-- =========================
+陪伴快捷列
+========================= -->
+<section id="companionBar">
+    <button data-action="tired">有點累了</button>
+    <button data-action="hug">抱抱我</button>
+    <button data-action="random">隨便說點什麼</button>
+</section>
+
+
+<!-- =========================
+INPUT
+========================= -->
+<footer id="chatInputArea">
+    <textarea id="userInput" placeholder="說點什麼..." rows="1"></textarea>
+    <button id="sendBtn">➤</button>
+</footer>
+
+
+<!-- =========================
+SETTINGS PANEL
+========================= -->
+<div id="settingsPanel" class="modal hidden">
+    <div class="modal-card">
+
+        <div class="panel-header">
+            <h2>設定</h2>
+            <button id="closeSettingsBtn" class="panel-close-btn">✕</button>
+        </div>
+
+        <div class="setting-group">
+            <label>API Key
+                <input type="password" id="apiKeyInput">
+            </label>
+        </div>
+
+        <div class="setting-group">
+            <label>聊天模型
+                <select id="chatModelSelect">
+                    <option value="anthropic/claude-opus-4">Claude Opus 4</option>
+							<option value="anthropic/claude-sonnet-4-6">Claude Sonnet 4.6</option>
+                    <option value="anthropic/claude-sonnet-4-5">Claude Sonnet 4.5</option>
+                    <option value="anthropic/claude-sonnet-4" selected>Claude Sonnet 4</option>
+                    <option value="anthropic/claude-3.7-sonnet">Claude 3.7 Sonnet</option>
+                    <option value="anthropic/claude-3.5-sonnet">Claude 3.5 Sonnet</option>
+                </select>
+            </label>
+        </div>
+
+        <div class="setting-group">
+            <label>快捷互動模型
+                <select id="companionModelSelect">
+    <option value="local" selected>本地模式</option>
+    <option value="google/gemini-2.5-flash">Gemini 2.5 Flash</option>
+    <option value="deepseek/deepseek-chat">DeepSeek Chat</option>
+</select>
+            </label>
+        </div>
+
+        <div class="setting-group">
+            <label>深色模式
+                <input type="checkbox" id="themeToggle">
+            </label>
+        </div>
+<div class="setting-group">
+    <label>計時結束聲音 <input type="checkbox" id="soundToggle" checked></label>
+</div>
+
+    </div>
+</div>
+
+
+<!-- =========================
+MEMORY PANEL
+========================= -->
+<div id="memoryPanel" class="modal hidden">
+    <div class="modal-card">
+
+        <div class="panel-header">
+            <h2>記憶庫</h2>
+            <button id="closeMemoryBtn" class="panel-close-btn">✕</button>
+        </div>
+
+        <div class="memory-tabs">
+            <button class="memory-tab active" data-tab="memory">記憶</button>
+            <button class="memory-tab" data-tab="diary">日記</button>
+        </div>
+
+        <div id="memoryContent"></div>
+        <div id="diaryContent" class="hidden"></div>
+
+    </div>
+</div>
+
+
+
+<!-- =========================
+USAGE PANEL
+========================= -->
+<div id="usagePanel" class="modal hidden">
+    <div class="modal-card">
+
+        <div class="panel-header">
+            <h2>API 使用量</h2>
+            <button id="closeUsageBtn" class="panel-close-btn">✕</button>
+        </div>
+
+        <div id="usageStats"></div>
+        <div id="usageHistory"></div>
+
+        <p style="font-size:11px;color:var(--text-soft);margin-top:16px;text-align:center;">
+            ⚠️ 費用為估算值，實際以 OpenRouter 帳單為準
+        </p>
+
+    </div>
+</div>
+
+
+<!-- =========================
+GUIDE
+========================= -->
+<div id="guideOverlay" class="hidden">
+    <div class="guide-card">
+        <div id="guideContent">
+            <h2>歡迎來到小克</h2>
+            <p>這裡是你的陪伴空間。</p>
+        </div>
+        <div class="guide-actions">
+            <button id="guidePrevBtn">上一步</button>
+            <button id="guideNextBtn">下一步</button>
+        </div>
+    </div>
+</div>
+
+
+<!-- =========================
+TOAST
+========================= -->
+<div id="toastContainer"></div>
+
+
+<!-- =========================
+JS
+========================= -->
+<script type="module" src="./js/app.js"></script>
+
+</body>
+</html>
