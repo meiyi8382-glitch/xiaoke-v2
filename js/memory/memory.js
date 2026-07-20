@@ -289,7 +289,7 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-async function renderMemoryPanel() {
+export async function renderDiaryPanel() {
 
     const container = document.getElementById("diaryContent");
     if (!container) return;
