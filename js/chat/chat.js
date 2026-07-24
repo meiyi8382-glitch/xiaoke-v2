@@ -82,8 +82,9 @@ async function sendUserMessage() {
 
     try {
 
-// 取記憶庫
-        const memories = (await getAllMemories()).slice(0, 15);
+// 取記憶庫（按類型分組保底，避免重要記憶被最近的日常對話擠掉）
+        const allMemories = await getAllMemories();
+        const memories = pickMemoriesByType(allMemories);
         const memoryText = memories.length > 0
             ? "\n\n【記憶庫】\n" + memories.map(m => `- ${m.content}`).join("\n")
             : "";
@@ -216,6 +217,46 @@ async function saveChatHistory() {
 // ======================================
 // Utils
 // ======================================
+
+// 按類型分組，每種類型至少保留幾條最新的，避免重要記憶被日常對話擠掉
+function pickMemoriesByType(memories) {
+
+    const PER_TYPE_LIMIT = {
+        date:   5,   // 重要日期：保留較多，通常數量少但很重要
+        moment: 5,   // 關係時刻
+        quote:  5,   // 重要的話
+        story:  5    // 敘事
+    };
+
+    const TOTAL_LIMIT = 18; // 總量上限，避免 prompt 太長
+
+    const grouped = {};
+    memories.forEach(m => {
+        if (!grouped[m.type]) grouped[m.type] = [];
+        grouped[m.type].push(m);
+    });
+
+    let picked = [];
+
+    Object.keys(PER_TYPE_LIMIT).forEach(type => {
+        const list = grouped[type] || [];
+        // memories 假設已經是新到舊排序（saveMemory 用 unshift）
+        picked = picked.concat(list.slice(0, PER_TYPE_LIMIT[type]));
+    });
+
+    // 其他未分類的類型，也給予基本保留
+    Object.keys(grouped).forEach(type => {
+        if (!PER_TYPE_LIMIT[type]) {
+            picked = picked.concat(grouped[type].slice(0, 3));
+        }
+    });
+
+    // 按時間新到舊重新排序，並套總量上限
+    picked.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+    return picked.slice(0, TOTAL_LIMIT);
+
+}
 
 function scrollBottom() {
     messagesContainer.scrollTop =
