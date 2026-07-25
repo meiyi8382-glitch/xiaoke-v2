@@ -94,6 +94,23 @@ export async function loadSettings() {
         });
     }
 
+    // 清除本地緩存（保留 API key 和模型設定，只清聊天/記憶相關的舊資料）
+    document
+        .getElementById("clearCacheBtn")
+        ?.addEventListener("click", () => {
+            const confirmed = window.confirm(
+                "確定要清除本地緩存嗎？\n\n這會清掉手機上殘留的舊聊天/記憶資料（雲端記憶不受影響），API key 和模型設定會保留。"
+            );
+            if (!confirmed) return;
+
+            localStorage.removeItem("xiaoke_memory_v1");
+            localStorage.removeItem("xiaoke_chapters_v1");
+            localStorage.removeItem("xiaoke_diary_v1");
+            localStorage.removeItem("xiaoke_chat_history");
+
+            showToast("本地緩存已清除，請重新整理頁面");
+        });
+
     // 打開設定視窗
     document
         .getElementById("settingsBtn")
