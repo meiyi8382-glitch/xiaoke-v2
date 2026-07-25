@@ -178,7 +178,7 @@ SETTINGS PANEL
 
         <div class="setting-group">
             <label>聊天模型
-              <select id="chatModelSelect">
+                <select id="chatModelSelect">
                     <option value="anthropic/claude-sonnet-5" selected>Claude Sonnet 5</option>
                     <option value="anthropic/claude-opus-4">Claude Opus 4</option>
                     <option value="anthropic/claude-sonnet-4-6">Claude Sonnet 4.6</option>
@@ -212,6 +212,22 @@ SETTINGS PANEL
         </div>
 <div class="setting-group">
     <label>計時結束聲音 <input type="checkbox" id="soundToggle" checked></label>
+</div>
+<div class="setting-group">
+    <label style="color:#e74c3c;">清除本地緩存
+        <button id="clearCacheBtn" style="
+            margin-top:8px;
+            padding:8px 16px;
+            border-radius:8px;
+            border:1px solid #e74c3c;
+            background:transparent;
+            color:#e74c3c;
+            font-size:14px;
+        ">清除舊資料</button>
+    </label>
+    <p style="font-size:12px;color:var(--text-soft);margin-top:4px;">
+        如果感覺記憶對不上（例如出現舊版小克的內容），可以點這裡清除手機本地殘留的舊資料。雲端記憶不受影響。
+    </p>
 </div>
 
     </div>
