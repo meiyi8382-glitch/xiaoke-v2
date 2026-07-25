@@ -206,12 +206,15 @@ export async function loadChatHistory() {
     }
 }
 
-async function saveChatHistory() {
+ async function saveChatHistory() {
     const today = new Date().toLocaleDateString("zh-TW");
-    const lastMsg = chatHistory[chatHistory.length - 1];
-    if (!lastMsg) return;
-    await saveMessage(lastMsg.role, lastMsg.content, today);
+    // 保存這一輪的兩條消息（用戶 + AI），而不只是最後一條
+    const lastTwo = chatHistory.slice(-2);
+    for (const msg of lastTwo) {
+        await saveMessage(msg.role, msg.content, today);
+    }
 }
+
 
 
 // ======================================
