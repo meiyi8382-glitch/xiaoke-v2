@@ -4,17 +4,28 @@
 // =====================================
 
 const MODEL_PRICING = {
+    // Claude 系列
+    "anthropic/claude-sonnet-5":    { input: 2,    output: 10   },
     "anthropic/claude-opus-4":      { input: 15,   output: 75   },
-    "anthropic/claude-sonnet-4":    { input: 3,    output: 15   },
+    "anthropic/claude-sonnet-4-6":  { input: 3,    output: 15   },
     "anthropic/claude-sonnet-4-5":  { input: 3,    output: 15   },
-	 "anthropic/claude-sonnet-4-6":  { input: 3,    output: 15   },
-    "anthropic/claude-3.7-sonnet":  { input: 3,    output: 15   },
-    "anthropic/claude-3.5-sonnet":  { input: 3,    output: 15   },
-    "deepseek-chat":                { input: 0.14, output: 0.28 },
-    "google/gemini-2.5-flash":      { input: 0.075,output: 0.3  },
-    "gemini-2.0-flash":             { input: 0.1,  output: 0.4  },
-    "qwen-turbo":                   { input: 0.05, output: 0.2  },
+    "anthropic/claude-sonnet-4":    { input: 3,    output: 15   },
+    // OpenAI
+    "openai/gpt-4o":                { input: 2.5,  output: 10   },
+    // Google Gemini
+    "google/gemini-3.6-flash":         { input: 1.5,  output: 7.5  },
+    "google/gemini-3.1-pro-preview":   { input: 2,    output: 12   },
+    "google/gemini-2.5-flash":         { input: 0.075,output: 0.3  },
+    // xAI Grok
+    "x-ai/grok-4.3":                { input: 1.25, output: 2.5  },
+    "x-ai/grok-4.5":                { input: 2,    output: 6    },
+    // Z.ai GLM
+    "z-ai/glm-4.7":                 { input: 0.4,  output: 1.75 },
+    "z-ai/glm-5":                   { input: 0.6,  output: 1.92 },
+    // 其他 / 快捷互動模型
+    "deepseek/deepseek-chat":       { input: 0.14, output: 0.28 },
 };
+
 
 const STORAGE_KEY = "xiaoke_usage_v2";
 const MAX_HISTORY_DAYS = 30;
