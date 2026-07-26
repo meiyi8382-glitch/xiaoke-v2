@@ -35,6 +35,10 @@ const sendBtn =
 
 let chatHistory = [];
 
+// 記錄最後一次失敗的使用者訊息，方便「重試」按鈕重新發送
+let lastFailedText = null;
+let lastFailedBubble = null;
+
 
 // ======================================
 // Init
@@ -44,7 +48,7 @@ export function initChat() {
 
     sendBtn?.addEventListener(
         "click",
-        sendUserMessage
+        () => sendUserMessage(input.value.trim())
     );
 
     input?.addEventListener(
@@ -52,10 +56,28 @@ export function initChat() {
         (e) => {
             if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
-                sendUserMessage();
+                sendUserMessage(input.value.trim());
             }
         }
     );
+
+    // 用事件委派處理「重新生成」「重試」按鈕的點擊
+    // （因為這些按鈕是動態產生的，要用委派才能監聽到）
+    messagesContainer?.addEventListener("click", (e) => {
+
+        const retryBtn = e.target.closest(".retry-send-btn");
+        if (retryBtn) {
+            retrySend();
+            return;
+        }
+
+        const regenBtn = e.target.closest(".regen-btn");
+        if (regenBtn) {
+            regenerateReply(regenBtn);
+            return;
+        }
+
+    });
 
 }
 
@@ -64,9 +86,8 @@ export function initChat() {
 // Send
 // ======================================
 
-async function sendUserMessage() {
+async function sendUserMessage(text) {
 
-    const text = input.value.trim();
     if (!text) return;
 
     addMessage("user", text);
@@ -78,11 +99,89 @@ async function sendUserMessage() {
 
     input.value = "";
 
+    await requestAndAddReply(text);
+
+}
+
+
+// 重新發送上一次失敗的訊息
+function retrySend() {
+
+    if (!lastFailedText) return;
+
+    if (lastFailedBubble) {
+        lastFailedBubble.remove();
+        lastFailedBubble = null;
+    }
+
+    const text = lastFailedText;
+    lastFailedText = null;
+
+    requestAndAddReply(text);
+
+}
+
+
+// 重新生成某一句 AI 回覆（不新增使用者訊息，只是換一個回答）
+async function regenerateReply(btn) {
+
+    const bubble = btn.closest(".message.assistant");
+    if (!bubble) return;
+
+    // 找出這句回覆對應在 chatHistory 中的位置
+    const allAssistantBubbles = Array.from(
+        messagesContainer.querySelectorAll(".message.assistant")
+    );
+    const bubbleIndex = allAssistantBubbles.indexOf(bubble);
+
+    // 找出 chatHistory 裡第 bubbleIndex 個 assistant 訊息的索引
+    let count = -1;
+    let historyIndex = -1;
+    for (let i = 0; i < chatHistory.length; i++) {
+        if (chatHistory[i].role === "assistant") {
+            count++;
+            if (count === bubbleIndex) {
+                historyIndex = i;
+                break;
+            }
+        }
+    }
+
+    if (historyIndex === -1) return;
+
+    // 找到觸發這句回覆的使用者訊息（往前找最近的一句 user）
+    let userText = "";
+    for (let i = historyIndex - 1; i >= 0; i--) {
+        if (chatHistory[i].role === "user") {
+            userText = chatHistory[i].content;
+            break;
+        }
+    }
+
+    // 截斷 chatHistory 到這句回覆之前（重新生成會取代它）
+    chatHistory = chatHistory.slice(0, historyIndex);
+
+    // 移除畫面上這句回覆之後的所有訊息氣泡
+    let node = bubble;
+    while (node) {
+        const next = node.nextSibling;
+        node.remove();
+        node = next;
+    }
+
+    await requestAndAddReply(userText);
+
+}
+
+
+// 實際呼叫 API 並把回覆加到畫面上（發送 / 重試 / 重新生成 共用）
+async function requestAndAddReply(userText) {
+
     const loadingBubble = addTypingBubble();
 
     try {
 
-// 取記憶庫（按類型分組保底，避免重要記憶被最近的日常對話擠掉）
+        // 取記憶庫（按類型分組保底，避免重要記憶被最近的日常對話擠掉）
         const allMemories = await getAllMemories();
         const memories = pickMemoriesByType(allMemories);
         const memoryText = memories.length > 0
@@ -91,7 +190,7 @@ async function sendUserMessage() {
 
         // 動態截斷：情緒關鍵詞時多保留
         const emotionWords = ["難過", "哭", "委屈", "害怕", "崩潰", "煩", "累", "痛","喜欢","爱你"];
-        const isEmotional = emotionWords.some(w => text.includes(w));
+        const isEmotional = emotionWords.some(w => userText.includes(w));
         const limit = isEmotional ? 30 : 20;
         const recentHistory = chatHistory.slice(-limit);
 
@@ -107,7 +206,6 @@ async function sendUserMessage() {
             ...recentHistory
         ];
 
-
         const result = await sendChatMessage(messagesWithSystem);
 
         loadingBubble.remove();
@@ -122,15 +220,22 @@ async function sendUserMessage() {
         saveChatHistory();
 
         // 自動提取記憶（背景執行，不影響聊天）
-        extractAndSaveMemory(text, result.text);
+        extractAndSaveMemory(userText, result.text);
         generateDiaryEntry(chatHistory);
 
-tryGenerateChapter(chatHistory);
+        tryGenerateChapter(chatHistory);
 
     } catch (error) {
 
         loadingBubble.remove();
-        showToast("回覆失敗：" + (error.message || "未知錯誤"));
+
+        // 記錄失敗的訊息，並顯示可重試的錯誤氣泡
+        lastFailedText = userText;
+        lastFailedBubble = addRetryBubble(
+            "回覆失敗：" + (error.message || "未知錯誤")
+        );
+
+        showToast("回覆失敗，點下方訊息可重試");
         console.error(error);
 
     }
@@ -152,10 +257,33 @@ function addMessage(role, content) {
         <div class="bubble">
             ${escapeHtml(content)}
         </div>
+        ${role === "assistant" ? `
+            <button class="regen-btn" title="重新生成這句回覆">🔄</button>
+        ` : ""}
     `;
 
     messagesContainer.appendChild(bubble);
     scrollBottom();
+
+}
+
+
+// 顯示一個失敗提示氣泡，帶有「重試」按鈕
+function addRetryBubble(errorText) {
+
+    const bubble = document.createElement("div");
+    bubble.className = "message assistant retry-bubble";
+    bubble.innerHTML = `
+        <div class="bubble retry-failed">
+            ${escapeHtml(errorText)}
+            <button class="retry-send-btn">重試</button>
+        </div>
+    `;
+
+    messagesContainer.appendChild(bubble);
+    scrollBottom();
+
+    return bubble;
 
 }
 
