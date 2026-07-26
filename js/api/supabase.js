@@ -21,16 +21,30 @@ export async function saveMessage(role, content, date) {
     try {
         const res = await fetch(`${SUPABASE_URL}/rest/v1/messages`, {
             method: "POST",
-            headers,
+            headers: { ...headers, "Prefer": "return=representation" },
             body: JSON.stringify({ role, content, date })
         });
         if (!res.ok) {
             const errText = await res.text();
             throw new Error(`saveMessage 被拒絕 (${res.status}): ${errText}`);
         }
+        const data = await res.json();
+        return data?.[0]?.id ?? null;
     } catch (e) {
         console.warn("[supabase] saveMessage 失敗", e);
         throw e;
+    }
+}
+
+export async function deleteMessageById(id) {
+    if (!id) return;
+    try {
+        await fetch(`${SUPABASE_URL}/rest/v1/messages?id=eq.${id}`, {
+            method: "DELETE",
+            headers
+        });
+    } catch (e) {
+        console.warn("[supabase] deleteMessageById 失敗", e);
     }
 }
 
