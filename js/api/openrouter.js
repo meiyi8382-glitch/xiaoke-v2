@@ -56,6 +56,14 @@ export async function sendChatMessage(
 
     const data = await response.json();
 
+    const replyText = data.choices?.[0]?.message?.content || "";
+
+    if (!replyText.trim()) {
+        throw new Error(
+            `模型「${model}」這次沒有回覆內容，可能是暫時的問題，換一個模型或再試一次看看`
+        );
+    }
+
     // 記錄用量（輸入/輸出分開，才能準確算費用）
     recordUsage({
         model,
@@ -64,7 +72,7 @@ export async function sendChatMessage(
     });
 
     return {
-        text:  data.choices?.[0]?.message?.content || "",
+        text:  replyText,
         usage: data.usage || {}
     };
 
