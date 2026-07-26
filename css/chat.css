@@ -4,3 +4,51 @@
 .avatar        { cursor: pointer; }
 .welcome-logo  { cursor: pointer; }
 #statusText    { cursor: pointer; }
+
+
+/* 重新生成按鈕（貼在 AI 訊息氣泡旁） */
+.message.assistant {
+    align-items: flex-end;
+    gap: 6px;
+}
+
+.regen-btn {
+    background: none;
+    border: none;
+    font-size: 14px;
+    opacity: 0.4;
+    cursor: pointer;
+    padding: 4px;
+    line-height: 1;
+    transition: opacity 0.15s ease;
+}
+
+.regen-btn:hover,
+.regen-btn:active {
+    opacity: 0.9;
+}
+
+/* 發送失敗時的重試氣泡 */
+.bubble.retry-failed {
+    background: rgba(231, 76, 60, 0.12);
+    border: 1px solid rgba(231, 76, 60, 0.4);
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+}
+
+.retry-send-btn {
+    background: #e74c3c;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.retry-send-btn:active {
+    opacity: 0.8;
+}
