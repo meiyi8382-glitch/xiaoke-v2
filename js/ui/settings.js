@@ -94,21 +94,39 @@ export async function loadSettings() {
         });
     }
 
-    // 清除本地緩存（保留 API key 和模型設定，只清聊天/記憶相關的舊資料）
+    // 清除本地緩存 + 雲端資料（並回報結果，方便驗證是否真的清乾淨）
     document
         .getElementById("clearCacheBtn")
-        ?.addEventListener("click", () => {
+        ?.addEventListener("click", async () => {
+
             const confirmed = window.confirm(
-                "確定要清除本地緩存嗎？\n\n這會清掉手機上殘留的舊聊天/記憶資料（雲端記憶不受影響），API key 和模型設定會保留。"
+                "確定要徹底清除嗎？\n\n這會清掉手機本地資料，以及 Supabase 雲端的 messages、memories、chapters 三張表全部內容。這個動作無法復原。API key 和模型設定會保留。"
             );
             if (!confirmed) return;
 
+            // 清本地
             localStorage.removeItem("xiaoke_memory_v1");
             localStorage.removeItem("xiaoke_chapters_v1");
             localStorage.removeItem("xiaoke_diary_v1");
             localStorage.removeItem("xiaoke_chat_history");
 
-            showToast("本地緩存已清除，請重新整理頁面");
+            showToast("正在清除雲端資料，請稍候...");
+
+            // 清雲端，並拿到清空前後的筆數
+            const { wipeAllCloudData } = await import("../api/supabase.js");
+            const result = await wipeAllCloudData();
+
+            const msg =
+                `清除完成\n\n` +
+                `messages：${result.before.messages} → ${result.after.messages}\n` +
+                `memories：${result.before.memories} → ${result.after.memories}\n` +
+                `chapters：${result.before.chapters} → ${result.after.chapters}\n\n` +
+                (result.after.messages === 0 && result.after.memories === 0 && result.after.chapters === 0
+                    ? "✅ 雲端已完全清空"
+                    : "⚠️ 還有殘留資料，可能需要重試一次");
+
+            window.alert(msg);
+
         });
 
     // 打開設定視窗
