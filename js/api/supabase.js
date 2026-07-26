@@ -19,13 +19,18 @@ const headers = {
 
 export async function saveMessage(role, content, date) {
     try {
-        await fetch(`${SUPABASE_URL}/rest/v1/messages`, {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/messages`, {
             method: "POST",
             headers,
             body: JSON.stringify({ role, content, date })
         });
+        if (!res.ok) {
+            const errText = await res.text();
+            throw new Error(`saveMessage 被拒絕 (${res.status}): ${errText}`);
+        }
     } catch (e) {
         console.warn("[supabase] saveMessage 失敗", e);
+        throw e;
     }
 }
 
@@ -51,6 +56,47 @@ export async function clearMessages() {
     } catch (e) {
         console.warn("[supabase] clearMessages 失敗", e);
     }
+}
+
+// 查詢某張表目前的資料筆數
+async function countRows(table) {
+    try {
+        const res = await fetch(
+            `${SUPABASE_URL}/rest/v1/${table}?select=id`,
+            { headers }
+        );
+        const data = await res.json();
+        return Array.isArray(data) ? data.length : -1;
+    } catch (e) {
+        return -1;
+    }
+}
+
+// 徹底清空三張雲端表格，並回傳清空前後的筆數，方便驗證
+export async function wipeAllCloudData() {
+
+    const before = {
+        messages: await countRows("messages"),
+        memories: await countRows("memories"),
+        chapters: await countRows("chapters")
+    };
+
+    try {
+        await fetch(`${SUPABASE_URL}/rest/v1/messages?id=gte.0`, { method: "DELETE", headers });
+        await fetch(`${SUPABASE_URL}/rest/v1/memories?id=gte.0`, { method: "DELETE", headers });
+        await fetch(`${SUPABASE_URL}/rest/v1/chapters?id=gte.0`, { method: "DELETE", headers });
+    } catch (e) {
+        console.warn("[supabase] wipeAllCloudData 失敗", e);
+    }
+
+    const after = {
+        messages: await countRows("messages"),
+        memories: await countRows("memories"),
+        chapters: await countRows("chapters")
+    };
+
+    return { before, after };
+
 }
 
 
