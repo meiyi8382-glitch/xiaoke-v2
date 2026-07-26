@@ -22,7 +22,7 @@ import { getAllMemories } from "../memory/memory.js";
 
 import { getChapterContext, tryGenerateChapter } from "../memory/chapters.js";
 
-import { saveMessage, loadMessages } from "../api/supabase.js";
+import { saveMessage, loadMessages, deleteMessageById } from "../api/supabase.js";
 
 const messagesContainer =
     document.getElementById("messages");
@@ -148,6 +148,12 @@ async function regenerateReply(btn) {
     }
 
     if (historyIndex === -1) return;
+
+    // 若這句回覆已經成功存到雲端，重新生成前先把舊的雲端記錄刪掉
+    const oldEntry = chatHistory[historyIndex];
+    if (oldEntry?.dbId) {
+        await deleteMessageById(oldEntry.dbId);
+    }
 
     // 找到觸發這句回覆的使用者訊息（往前找最近的一句 user）
     let userText = "";
@@ -323,7 +329,8 @@ export async function loadChatHistory() {
         chatHistory = messages.map(m => ({
             role: m.role,
             content: m.content,
-            date: m.date
+            date: m.date,
+            dbId: m.id
         }));
         removeWelcome();
         chatHistory.forEach(msg => {
@@ -337,9 +344,14 @@ export async function loadChatHistory() {
 async function saveChatHistory() {
     const today = new Date().toLocaleDateString("zh-TW");
     // 保存這一輪的兩條消息（用戶 + AI），而不只是最後一條
-    const lastTwo = chatHistory.slice(-2);
-    for (const msg of lastTwo) {
-        await saveMessage(msg.role, msg.content, today);
+    // 從後面數的位置，才能對應回 chatHistory 陣列裡的正確索引
+    const total = chatHistory.length;
+    const startIndex = Math.max(0, total - 2);
+
+    for (let i = startIndex; i < total; i++) {
+        const msg = chatHistory[i];
+        const id = await saveMessage(msg.role, msg.content, today);
+        if (id) msg.dbId = id;
     }
 }
 
