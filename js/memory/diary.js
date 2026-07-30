@@ -35,8 +35,10 @@ export async function generateDiaryEntry(messages) {
     if (!apiKey) return;
 
     const today = new Date().toLocaleDateString("zh-TW");
-    const allHistory = JSON.parse(localStorage.getItem("xiaoke_chat_history") || "[]");
-    const todayMessages = allHistory.filter(m => m.date === today && m.role !== "system");
+
+    // 直接使用 chat.js 傳進來的當前對話記錄，
+    // 不再依賴一個實際上從未被寫入的 localStorage 鍵
+    const todayMessages = (messages || []).filter(m => m.role !== "system");
 
     if (todayMessages.length < 2) return;
 
