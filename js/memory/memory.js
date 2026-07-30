@@ -3,6 +3,7 @@ import { getDiary } from "./diary.js";
 import { saveMemoryCloud, loadMemories, deleteMemoryCloud } from "../api/supabase.js";
 
 const STORAGE_KEY = "xiaoke_memory_v1";
+const PROFILE_CANDIDATES_KEY = "xiaoke_profile_candidates_v1";
 
 // 記憶類型定義
 const MEMORY_TYPES = {
@@ -76,16 +77,18 @@ export async function extractAndSaveMemory(
 
     const prompt = `你是記憶助手。根據以下對話，判斷有沒有值得長期記住的內容。
 
-記憶類型（只能用這四種）：
+記憶類型（只能用這五種）：
 - date：重要日期（紀念日、生日、考試日、截止日等具體日期）
 - moment：關係時刻（感情升溫、波動、爭執、和好、說了重要的話的那個時刻）
 - story：敘事（發生了什麼具體的事，要有細節，不能只寫心情）
 - quote：重要的話（格式必須是「伊伊：原話」或「小克：原話」，有份量的，值得記住原文）
+- profile_candidate：基本資料候選（伊伊透露的長期性、穩定性的個人資訊，例如興趣愛好、飲食習慣、寵物、家人、長期的生活狀態、價值觀等——不是單次事件，而是「以後大概率都是這樣」的資訊）
 
 提取原則：
 - 必須有具體內容，不能只寫「用戶感到難過」這種空話
 - story 要寫清楚發生了什麼、前因後果
 - quote 要盡量保留原話
+- profile_candidate 只挑真正長期穩定的資訊，單次的心情或暫時的狀態不算
 - 沒有值得記的就回傳 []
 - 不要重複提取已經記過的內容
 
@@ -128,13 +131,17 @@ export async function extractAndSaveMemory(
         if (!Array.isArray(items) || items.length === 0) return;
 
         for (const item of items) {
-    if (item.type && item.content) {
-        await saveMemory({
-            type:    item.type,
-            content: item.content
-        });
-    }
-}
+            if (!item.type || !item.content) continue;
+
+            if (item.type === "profile_candidate") {
+                addProfileCandidate(item.content);
+            } else {
+                await saveMemory({
+                    type:    item.type,
+                    content: item.content
+                });
+            }
+        }
 
     } catch (e) {
         // 提取失敗不影響主要聊天功能
@@ -322,4 +329,75 @@ export async function renderDiaryPanel() {
         </div>
     `).join("");
 
+}
+
+
+// =====================================
+// 基本資料候選（Profile Candidates）
+// 由 AI 從聊天中發現的、可能適合加進 profile.js 的
+// 長期性個人資訊。存在本地，等使用者手動確認才會真正採用。
+// =====================================
+
+function addProfileCandidate(content) {
+
+    const list = getProfileCandidates();
+
+    // 避免重複加入完全一樣的內容
+    if (list.some(c => c.content === content)) return;
+
+    list.unshift({
+        id: Date.now().toString(),
+        content,
+        createdAt: Date.now()
+    });
+
+    // 最多保留 30 條候選，避免無限累積
+    if (list.length > 30) list.splice(30);
+
+    localStorage.setItem(PROFILE_CANDIDATES_KEY, JSON.stringify(list));
+
+}
+
+export function getProfileCandidates() {
+    try {
+        const saved = localStorage.getItem(PROFILE_CANDIDATES_KEY);
+        return saved ? JSON.parse(saved) : [];
+    } catch {
+        return [];
+    }
+}
+
+// 忽略某條候選（使用者覺得不需要，直接刪掉）
+export function dismissProfileCandidate(id) {
+    const list = getProfileCandidates().filter(c => c.id !== id);
+    localStorage.setItem(PROFILE_CANDIDATES_KEY, JSON.stringify(list));
+}
+
+// 採納某條候選：回傳內容給呼叫方（設定面板）去實際更新 profile.js 的顯示
+// 因為 profile.js 的內容是寫在程式碼裡的常數，無法在瀏覽器端直接修改原始檔案，
+// 所以這裡只負責把「已採納」的內容额外存到 localStorage，
+// 並在 getProfileContext() 時一併附加上去，讓 AI 讀得到。
+const ADOPTED_PROFILE_KEY = "xiaoke_adopted_profile_v1";
+
+export function adoptProfileCandidate(id) {
+
+    const list = getProfileCandidates();
+    const target = list.find(c => c.id === id);
+    if (!target) return;
+
+    const adopted = getAdoptedProfileNotes();
+    adopted.push(target.content);
+    localStorage.setItem(ADOPTED_PROFILE_KEY, JSON.stringify(adopted));
+
+    dismissProfileCandidate(id);
+
+}
+
+export function getAdoptedProfileNotes() {
+    try {
+        const saved = localStorage.getItem(ADOPTED_PROFILE_KEY);
+        return saved ? JSON.parse(saved) : [];
+    } catch {
+        return [];
+    }
 }
