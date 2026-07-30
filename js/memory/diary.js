@@ -32,7 +32,10 @@ function saveDiary(entries) {
 export async function generateDiaryEntry(messages) {
 
     const apiKey = localStorage.getItem("apiKey");
-    if (!apiKey) return;
+    if (!apiKey) {
+        debugLog("[diary] 沒有 API key，跳過生成");
+        return;
+    }
 
     const today = new Date().toLocaleDateString("zh-TW");
 
@@ -40,7 +43,12 @@ export async function generateDiaryEntry(messages) {
     // 不再依賴一個實際上從未被寫入的 localStorage 鍵
     const todayMessages = (messages || []).filter(m => m.role !== "system");
 
-    if (todayMessages.length < 2) return;
+    debugLog(`[diary] 目前對話共 ${todayMessages.length} 條`);
+
+    if (todayMessages.length < 2) {
+        debugLog("[diary] 對話少於2條，跳過生成");
+        return;
+    }
 
     const convo = todayMessages
         .map(m => `${m.role === "user" ? "伊伊" : "小克"}：${m.content}`)
@@ -79,7 +87,12 @@ ${convo}
         const data = await res.json();
         const text = data?.choices?.[0]?.message?.content?.trim();
 
-        if (!text || text === "無" || text.length < 5) return;
+        debugLog(`[diary] AI 回覆內容：「${text || "(空)"}」`);
+
+        if (!text || text === "無" || text.length < 5) {
+            debugLog("[diary] 判斷為「無」或內容太短，不生成日記");
+            return;
+        }
 
         const today = new Date().toLocaleDateString("zh-TW");
         const diary = getDiary();
@@ -100,10 +113,23 @@ ${convo}
 
         saveDiary(diary);
 
+        debugLog("[diary] ✅ 日記已成功寫入");
+
     } catch (err) {
+        debugLog(`[diary] ❌ 生成失敗：${err.message || err}`);
         console.warn("[diary] 生成失敗", err);
     }
 
+}
+
+
+// 臨時除錯用：把訊息顯示在畫面上方的紅色提示框（跟系統錯誤共用同一個框）
+function debugLog(msg) {
+    const box = document.getElementById("debugErrorBox");
+    if (!box) return;
+    box.style.display = "block";
+    box.style.background = "#2ecc71";
+    box.textContent += msg + "\n\n";
 }
 
 
