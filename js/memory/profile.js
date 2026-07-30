@@ -14,7 +14,20 @@ export const YIYI_PROFILE = `
 `;
 
 export function getProfileContext() {
-    return YIYI_PROFILE;
+
+    let context = YIYI_PROFILE;
+
+    // 附加使用者已經確認採納的補充資料（來自聊天中自動發現、經確認後採用的內容）
+    try {
+        const saved = localStorage.getItem("xiaoke_adopted_profile_v1");
+        const adopted = saved ? JSON.parse(saved) : [];
+        if (adopted.length > 0) {
+            context += "\n\n補充資料：\n" + adopted.map(n => `- ${n}`).join("\n");
+        }
+    } catch {}
+
+    return context;
+
 }
 
 export function initProfile() {}
