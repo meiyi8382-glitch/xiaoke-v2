@@ -214,6 +214,22 @@ SETTINGS PANEL
     <label>計時結束聲音 <input type="checkbox" id="soundToggle" checked></label>
 </div>
 <div class="setting-group">
+    <label>個人資料建議
+        <button id="profileCandidatesBtn" style="
+            margin-top:8px;
+            padding:8px 16px;
+            border-radius:8px;
+            border:1px solid var(--accent, #ff8c42);
+            background:transparent;
+            color:var(--accent, #ff8c42);
+            font-size:14px;
+        ">查看待確認資料 <span id="candidateCount"></span></button>
+    </label>
+    <p style="font-size:12px;color:var(--text-soft);margin-top:4px;">
+        聊天中發現的長期性個人資訊會先放在這裡，妳確認後才會真正納入他對妳的了解。
+    </p>
+</div>
+<div class="setting-group">
     <label style="color:#e74c3c;">清除本地緩存
         <button id="clearCacheBtn" style="
             margin-top:8px;
@@ -229,6 +245,7 @@ SETTINGS PANEL
         如果感覺記憶對不上（例如出現舊版小克的內容），可以點這裡清除手機本地殘留的舊資料。雲端記憶不受影響。
     </p>
 </div>
+
 
     </div>
 </div>
