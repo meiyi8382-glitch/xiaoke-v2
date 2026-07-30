@@ -6,6 +6,12 @@ import {
     DEFAULT_COMPANION_MODEL
 } from "../config/constants.js";
 
+import {
+    getProfileCandidates,
+    dismissProfileCandidate,
+    adoptProfileCandidate
+} from "../memory/memory.js";
+
 
 // ======================================
 // Load
@@ -93,6 +99,13 @@ export async function loadSettings() {
             localStorage.setItem("xiaoke_sound", sndToggle.checked);
         });
     }
+
+    // 個人資料建議：更新數量標示，並綁定點擊開啟列表
+    refreshCandidateCount();
+
+    document
+        .getElementById("profileCandidatesBtn")
+        ?.addEventListener("click", showProfileCandidatesDialog);
 
     // 清除本地緩存 + 雲端資料（並回報結果，方便驗證是否真的清乾淨）
     document
@@ -209,5 +222,46 @@ function saveSettings() {
     );
 
     showToast("設定已儲存");
+
+}
+
+
+// ======================================
+// 個人資料建議
+// ======================================
+
+function refreshCandidateCount() {
+    const countEl = document.getElementById("candidateCount");
+    if (!countEl) return;
+    const list = getProfileCandidates();
+    countEl.textContent = list.length > 0 ? `(${list.length})` : "";
+}
+
+function showProfileCandidatesDialog() {
+
+    const list = getProfileCandidates();
+
+    if (list.length === 0) {
+        window.alert("目前沒有待確認的資料。\n\n聊天中如果提到長期性的個人資訊（例如興趣、習慣、家人），會自動出現在這裡。");
+        return;
+    }
+
+    // 用簡單的逐條 confirm 讓使用者一條一條決定，避免另外做一個複雜的彈窗 UI
+    for (const item of list) {
+
+        const choice = window.confirm(
+            `發現一條可能的個人資料：\n\n「${item.content}」\n\n要採納加入他對妳的了解嗎？\n\n（確定 = 採納，取消 = 忽略）`
+        );
+
+        if (choice) {
+            adoptProfileCandidate(item.id);
+        } else {
+            dismissProfileCandidate(item.id);
+        }
+
+    }
+
+    refreshCandidateCount();
+    showToast("已處理完待確認資料");
 
 }
