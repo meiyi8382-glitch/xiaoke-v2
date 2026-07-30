@@ -343,17 +343,15 @@ export async function loadChatHistory() {
 
 async function saveChatHistory() {
     const today = new Date().toLocaleDateString("zh-TW");
-    // 保存這一輪的兩條消息（用戶 + AI），而不只是最後一條
-    // 從後面數的位置，才能對應回 chatHistory 陣列裡的正確索引
-    const total = chatHistory.length;
-    const startIndex = Math.max(0, total - 2);
-
-    for (let i = startIndex; i < total; i++) {
-        const msg = chatHistory[i];
+    // 只儲存「還沒有 dbId」的新訊息，避免重新生成時把已經存過的
+    // 使用者訊息重複插入一次
+    for (const msg of chatHistory) {
+        if (msg.dbId) continue;
         const id = await saveMessage(msg.role, msg.content, today);
         if (id) msg.dbId = id;
     }
 }
+
 
 
 // ======================================
