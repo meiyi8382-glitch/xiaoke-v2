@@ -228,14 +228,6 @@ async function requestAndAddReply(userText) {
                 // 自動提取記憶（背景執行，不影響聊天）
         extractAndSaveMemory(userText, result.text);
 
-        console.log("[chat.js] 準備呼叫 generateDiaryEntry，chatHistory 長度：", chatHistory.length);
-        const debugBox = document.getElementById("debugErrorBox");
-        if (debugBox) {
-            debugBox.style.display = "block";
-            debugBox.style.background = "#3498db";
-            debugBox.textContent += "[chat.js] 即將呼叫 generateDiaryEntry\n\n";
-        }
-
         generateDiaryEntry(chatHistory);
 
         tryGenerateChapter(chatHistory);
