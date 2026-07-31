@@ -32,22 +32,17 @@ function saveDiary(entries) {
 export async function generateDiaryEntry(messages) {
 
     const apiKey = localStorage.getItem("apiKey");
-    if (!apiKey) {
-        
-        return;
-    }
+    if (!apiKey) return;
 
     const today = new Date().toLocaleDateString("zh-TW");
 
-    // 直接使用 chat.js 傳進來的當前對話記錄，
-    // 不再依賴一個實際上從未被寫入的 localStorage 鍵
-    const todayMessages = (messages || []).filter(m => m.role !== "system");
+    // 只取「今天」的對話，避免把整個聊天歷史都塞進 prompt
+    // 沒有 date 欄位的舊資料（理論上不該再出現）視為不計入
+    const todayMessages = (messages || []).filter(
+        m => m.role !== "system" && m.date === today
+    );
 
-
-    if (todayMessages.length < 2) {
-        
-        return;
-    }
+    if (todayMessages.length < 2) return;
 
     const convo = todayMessages
         .map(m => `${m.role === "user" ? "伊伊" : "小克"}：${m.content}`)
@@ -86,13 +81,8 @@ ${convo}
         const data = await res.json();
         const text = data?.choices?.[0]?.message?.content?.trim();
 
+        if (!text || text === "無" || text.length < 5) return;
 
-        if (!text || text === "無" || text.length < 5) {
-
-            return;
-        }
-
-        const today = new Date().toLocaleDateString("zh-TW");
         const diary = getDiary();
         const todayIndex = diary.findIndex(e => e.date === today);
 
@@ -112,12 +102,10 @@ ${convo}
         saveDiary(diary);
 
     } catch (err) {
-        
         console.warn("[diary] 生成失敗", err);
     }
 
 }
-
 
 
 // ======================================
