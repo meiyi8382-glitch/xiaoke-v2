@@ -94,7 +94,8 @@ async function sendUserMessage(text) {
 
     chatHistory.push({
         role: "user",
-        content: text
+        content: text,
+        date: new Date().toLocaleDateString("zh-TW")
     });
 
     input.value = "";
@@ -220,18 +221,18 @@ async function requestAndAddReply(userText) {
 
         chatHistory.push({
             role: "assistant",
-            content: result.text
+            content: result.text,
+            date: new Date().toLocaleDateString("zh-TW")
         });
 
         saveChatHistory();
 
-                // 自動提取記憶（背景執行，不影響聊天）
+        // 自動提取記憶（背景執行，不影響聊天）
         extractAndSaveMemory(userText, result.text);
-
         generateDiaryEntry(chatHistory);
 
         tryGenerateChapter(chatHistory);
-        
+
     } catch (error) {
 
         loadingBubble.remove();
@@ -352,7 +353,6 @@ async function saveChatHistory() {
         if (id) msg.dbId = id;
     }
 }
-
 
 
 // ======================================
