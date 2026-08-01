@@ -50,3 +50,33 @@ export function getCurrentDiaryDateKey() {
     const now = new Date();
     return getDiaryDateKey(now.toISOString());
 }
+
+// 產生給 AI 看的「現在時間」描述，讓小克知道現在幾點、大概是什麼時段
+// 例如：「現在是 2026年8月2日 星期日 凌晨02:15（深夜時段）」
+export function getCurrentTimeContext() {
+    const now = new Date();
+    const taipeiTime = toTaipeiDate(now.toISOString());
+
+    const y = taipeiTime.getUTCFullYear();
+    const m = taipeiTime.getUTCMonth() + 1;
+    const d = taipeiTime.getUTCDate();
+    const hour = taipeiTime.getUTCHours();
+    const minute = taipeiTime.getUTCMinutes();
+
+    const weekdays = ["日", "一", "二", "三", "四", "五", "六"];
+    const weekday = weekdays[taipeiTime.getUTCDay()];
+
+    const hh = String(hour).padStart(2, "0");
+    const mm = String(minute).padStart(2, "0");
+
+    let period;
+    if (hour >= 0 && hour < 5) period = "深夜/凌晨時段";
+    else if (hour >= 5 && hour < 9) period = "清晨時段";
+    else if (hour >= 9 && hour < 12) period = "上午時段";
+    else if (hour >= 12 && hour < 14) period = "中午時段";
+    else if (hour >= 14 && hour < 18) period = "下午時段";
+    else if (hour >= 18 && hour < 22) period = "晚上時段";
+    else period = "深夜時段";
+
+    return `現在是 ${y}年${m}月${d}日 星期${weekday} ${hh}:${mm}（${period}）`;
+}
