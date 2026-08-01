@@ -52,3 +52,19 @@
 .retry-send-btn:active {
     opacity: 0.8;
 }
+
+/* 訊息時間戳 */
+.msg-time {
+    font-size: 11px;
+    opacity: 0.4;
+    padding: 2px 4px 0;
+    align-self: flex-end;
+}
+
+.message.user .msg-time {
+    align-self: flex-end;
+}
+
+.message.assistant .msg-time {
+    align-self: flex-start;
+}
