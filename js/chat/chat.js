@@ -15,7 +15,7 @@ import { getProfileContext } from "../memory/profile.js";
 import { getAllMemories } from "../memory/memory.js";
 import { getChapterContext, tryGenerateChapter } from "../memory/chapters.js";
 import { saveMessage, loadMessages, deleteMessageById } from "../api/supabase.js";
-import { getDiaryDateKey, getCurrentDiaryDateKey, formatTaipeiTime } from "../utils/timeUtils.js";
+import { getDiaryDateKey, getCurrentDiaryDateKey, formatTaipeiTime, getCurrentTimeContext } from "../utils/timeUtils.js";
 
 const messagesContainer =
     document.getElementById("messages");
@@ -175,7 +175,7 @@ async function requestAndAddReply(userText) {
         const recentHistory = chatHistory.slice(-limit);
 
         const chapterContext = getChapterContext();
-        const systemContent = XIAOKE_SYSTEM_PROMPT + "\n\n" + getProfileContext();
+        const systemContent = XIAOKE_SYSTEM_PROMPT + "\n\n" + getCurrentTimeContext() + "\n\n" + getProfileContext();
 
         const messagesWithSystem = [
             {
