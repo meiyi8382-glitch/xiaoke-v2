@@ -53,12 +53,13 @@
     opacity: 0.8;
 }
 
-/* 訊息時間戳 */
+
+/* 訊息時間戳（顯示在氣泡上方） */
 .msg-time {
     font-size: 11px;
     opacity: 0.4;
-    padding: 2px 4px 0;
-    align-self: flex-end;
+    padding: 0 4px 2px;
+    order: -1;
 }
 
 .message.user .msg-time {
