@@ -53,7 +53,6 @@
     opacity: 0.8;
 }
 
-
 /* 訊息時間戳（顯示在氣泡上方） */
 .msg-time {
     font-size: 11px;
@@ -69,3 +68,5 @@
 .message.assistant .msg-time {
     align-self: flex-start;
 }
+
+
