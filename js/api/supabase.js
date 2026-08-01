@@ -12,11 +12,9 @@ const headers = {
     "Authorization": `Bearer ${SUPABASE_KEY}`
 };
 
-
 // ======================================
 // 聊天記錄
 // ======================================
-
 export async function saveMessage(role, content, date) {
     try {
         const res = await fetch(`${SUPABASE_URL}/rest/v1/messages`, {
@@ -24,12 +22,16 @@ export async function saveMessage(role, content, date) {
             headers: { ...headers, "Prefer": "return=representation" },
             body: JSON.stringify({ role, content, date })
         });
+
         if (!res.ok) {
             const errText = await res.text();
             throw new Error(`saveMessage 被拒絕 (${res.status}): ${errText}`);
         }
+
         const data = await res.json();
-        return data?.[0]?.id ?? null;
+        // 回傳整筆資料（包含資料庫自動產生的 id 跟 created_at）
+        // created_at 是精確到微秒的 UTC 時間戳，用來判斷凌晨訊息歸屬哪一天
+        return data?.[0] ?? null;
     } catch (e) {
         console.warn("[supabase] saveMessage 失敗", e);
         throw e;
@@ -88,7 +90,6 @@ async function countRows(table) {
 
 // 徹底清空三張雲端表格，並回傳清空前後的筆數，方便驗證
 export async function wipeAllCloudData() {
-
     const before = {
         messages: await countRows("messages"),
         memories: await countRows("memories"),
@@ -110,14 +111,11 @@ export async function wipeAllCloudData() {
     };
 
     return { before, after };
-
 }
-
 
 // ======================================
 // 記憶
 // ======================================
-
 export async function saveMemoryCloud(memory) {
     try {
         await fetch(`${SUPABASE_URL}/rest/v1/memories`, {
@@ -154,11 +152,9 @@ export async function deleteMemoryCloud(id) {
     }
 }
 
-
 // ======================================
 // 章節摘要
 // ======================================
-
 export async function saveChapterCloud(chapter) {
     try {
         await fetch(`${SUPABASE_URL}/rest/v1/chapters`, {
