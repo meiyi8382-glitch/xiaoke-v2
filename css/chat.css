@@ -8,9 +8,12 @@
 
 /* 重新生成按鈕（貼在 AI 訊息氣泡旁） */
 .message.assistant {
-    align-items: flex-end;
-    gap: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
 }
+
 
 .regen-btn {
     background: none;
@@ -53,20 +56,27 @@
     opacity: 0.8;
 }
 
-/* 訊息時間戳（顯示在氣泡上方） */
+
+/* 訊息時間戳（顯示在氣泡上方，跟氣泡同一縱列） */
 .msg-time {
     font-size: 11px;
     opacity: 0.4;
     padding: 0 4px 2px;
     order: -1;
+    width: 100%;
+}
+
+.message.user {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
 }
 
 .message.user .msg-time {
-    align-self: flex-end;
+    text-align: right;
 }
 
 .message.assistant .msg-time {
-    align-self: flex-start;
+    text-align: left;
 }
-
 
