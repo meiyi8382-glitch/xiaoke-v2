@@ -52,9 +52,18 @@ export async function deleteMessageById(id) {
 
 export async function loadMessages() {
     try {
+        // Supabase 預設單次查詢最多回傳 1000 筆，訊息一多就會把最新的
+        // 訊息截斷掉。這裡用 Range header 明確要求最多 5000 筆，
+        // 並保持照時間正序排列。
         const res = await fetch(
             `${SUPABASE_URL}/rest/v1/messages?order=created_at.asc`,
-            { headers }
+            {
+                headers: {
+                    ...headers,
+                    "Range-Unit": "items",
+                    "Range": "0-4999"
+                }
+            }
         );
         return await res.json();
     } catch (e) {
