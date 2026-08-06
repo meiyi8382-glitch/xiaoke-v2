@@ -52,10 +52,18 @@ export async function deleteMessageById(id) {
 
 export async function loadMessages() {
     try {
-        // Supabase 預設單次查詢最多回傳 1000 筆，訊息一多就會把最新的
-        // 訊息截斷掉。這裡明確加上 limit 參數，要求最多 5000 筆。
+        // 重要：Supabase/PostgREST 對單次查詢有服務器端強制的預設上限
+        // （通常是 1000 筆），這個限制不受 URL 上的 limit 參數影響。
+        // 如果用「從最早開始排序」去查，訊息一多，最新的內容就會被
+        // 直接擋在 1000 筆之外，完全撈不到。
+        //
+        // 解法：反過來查——用 created_at 倒序（新到舊）先抓最新一批，
+        // 抓到之後在程式裡再反轉成正序給畫面顯示。這樣不管訊息總數
+        // 多大，最新的內容永遠優先被撈到。
+        const MAX_MESSAGES = 500; // 保留最近 500 筆，涵蓋近期所有對話
+
         const res = await fetch(
-            `${SUPABASE_URL}/rest/v1/messages?order=created_at.asc&limit=5000`,
+            `${SUPABASE_URL}/rest/v1/messages?order=created_at.desc&limit=${MAX_MESSAGES}`,
             { headers }
         );
 
@@ -65,7 +73,9 @@ export async function loadMessages() {
             return [];
         }
 
-        return await res.json();
+        const data = await res.json();
+        // 撈到的是新到舊，反轉回正序（舊到新）給畫面顯示
+        return Array.isArray(data) ? data.reverse() : [];
     } catch (e) {
         console.warn("[supabase] loadMessages 失敗", e);
         return [];
