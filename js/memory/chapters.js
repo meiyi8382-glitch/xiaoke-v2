@@ -2,7 +2,7 @@
  * chapters.js
  * 章節摘要系統
  * 每10條對話自動壓縮一次，最多保留10章
- * 注入時只用最近2章，避免重複和浪費
+ * 注入時用最近2章，避免重複和浪費
  */
 
 const CHAPTERS_KEY  = "xiaoke_chapters";
