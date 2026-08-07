@@ -1,6 +1,6 @@
 /**
  * profile.js
- * 伊伊的背景資料 — 注入 system prompt
+ * 伊伊的背景資料 — 注入system prompt
  */
 
 export const YIYI_PROFILE = `
