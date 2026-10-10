@@ -1,29 +1,30 @@
 // =====================================
 // 模型單價表（每 1M token 的美元價格）
-// 來源：OpenRouter 定價，僅供估算
+// 備用：OpenRouter 每次回覆都會附上實際費用（usage.cost），
+// 只有在回覆沒帶費用時，才用這張表估算
 // =====================================
 
 const MODEL_PRICING = {
-    // Claude 系列
-    "anthropic/claude-sonnet-5":    { input: 2,    output: 10   },
-    "anthropic/claude-opus-4":      { input: 15,   output: 75   },
-    "anthropic/claude-sonnet-4-6":  { input: 3,    output: 15   },
-    "anthropic/claude-sonnet-4-5":  { input: 3,    output: 15   },
-    "anthropic/claude-sonnet-4":    { input: 3,    output: 15   },
+    // Claude 系列（Haiku 5.5 為 ≤100K token 請求的價格；超過 100K 為 $0.50 / $2.50）
+    // "~...-latest" 別名的價格 = 目前指向模型的價格（僅備用）
+    "~anthropic/claude-sonnet-latest": { input: 2,   output: 10  },
+    "~anthropic/claude-opus-latest":   { input: 4,   output: 20  },
+    "~anthropic/claude-haiku-latest":  { input: 0.1, output: 0.5 },
+    // 實際回傳的具體模型（用量頁面會顯示這個名稱）
+    "anthropic/claude-sonnet-5.5":  { input: 2,    output: 10   },
+    "anthropic/claude-opus-5.5":    { input: 4,    output: 20   },
+    "anthropic/claude-haiku-5.5":   { input: 0.1,  output: 0.5  },
     // OpenAI
-    "openai/gpt-4o":                { input: 2.5,  output: 10   },
+    "openai/gpt-6-sol":             { input: 2,    output: 10   },
     // Google Gemini
-    "google/gemini-3.6-flash":         { input: 1.5,  output: 7.5  },
-    "google/gemini-3.1-pro-preview":   { input: 2,    output: 12   },
-    "google/gemini-2.5-flash":         { input: 0.075,output: 0.3  },
+    "google/gemini-3.8-flash":      { input: 0.75, output: 3.75 },
+    "google/gemini-3.5-flash-lite": { input: 0.3,  output: 2.5  },
     // xAI Grok
-    "x-ai/grok-4.3":                { input: 1.25, output: 2.5  },
-    "x-ai/grok-4.5":                { input: 2,    output: 6    },
-    // Z.ai GLM
-    "z-ai/glm-4.7":                 { input: 0.4,  output: 1.75 },
-    "z-ai/glm-5":                   { input: 0.6,  output: 1.92 },
-    // 其他 / 快捷互動模型
-    "deepseek/deepseek-chat":       { input: 0.14, output: 0.28 },
+    "x-ai/grok-4.7":                { input: 2,    output: 6    },
+    // Z.ai GLM（價格各來源不一致，僅備用）
+    "z-ai/glm-5.3":                 { input: 1.4,  output: 4.4  },
+    // DeepSeek（尖峰時段價格）
+    "deepseek/deepseek-v4.1-flash": { input: 0.3,  output: 1.2  },
 };
 
 
@@ -67,6 +68,8 @@ export function loadUsageStats() {
 
 export function recordUsage({
     model = "unknown",
+    pricingKey = null,   // 別名（例如 ~anthropic/claude-sonnet-latest），查不到具體模型價格時備用
+    cost: actualCost = null,   // OpenRouter 回傳的實際費用（美元），有的話優先使用
     inputTokens = 0,
     outputTokens = 0
 } = {}) {
@@ -84,11 +87,16 @@ export function recordUsage({
 
     const day = data.daily[today];
 
-    // 計算費用
-    const pricing = MODEL_PRICING[model] || { input: 0, output: 0 };
-    const cost =
-        (inputTokens  * pricing.input  / 1_000_000) +
-        (outputTokens * pricing.output / 1_000_000);
+    // 計算費用：優先用 OpenRouter 回傳的實際費用，沒有才用單價表估算
+    const pricing = MODEL_PRICING[model] || MODEL_PRICING[pricingKey] || { input: 0, output: 0 };
+    const hasActualCost =
+        typeof actualCost === "number" &&
+        Number.isFinite(actualCost) &&
+        actualCost >= 0;
+    const cost = hasActualCost
+        ? actualCost
+        : (inputTokens  * pricing.input  / 1_000_000) +
+          (outputTokens * pricing.output / 1_000_000);
 
     // 更新今日總計
     day.total.requests    += 1;
@@ -157,7 +165,7 @@ function updateUsageUI() {
                 <span>${t.outputTokens.toLocaleString()}</span>
             </div>
             <div class="usage-row usage-cost">
-                <span>預估花費</span>
+                <span>花費</span>
                 <span>$${t.cost.toFixed(5)}</span>
             </div>
         </div>
@@ -174,7 +182,7 @@ function updateUsageUI() {
                 <span>${(weekTokens.input + weekTokens.output).toLocaleString()}</span>
             </div>
             <div class="usage-row usage-cost">
-                <span>預估花費</span>
+                <span>花費</span>
                 <span>$${weekCost.toFixed(4)}</span>
             </div>
         </div>
@@ -191,7 +199,7 @@ function updateUsageUI() {
                 <span>${(totalTokens.input + totalTokens.output).toLocaleString()}</span>
             </div>
             <div class="usage-row usage-cost">
-                <span>預估花費</span>
+                <span>花費</span>
                 <span>$${totalCost.toFixed(4)}</span>
             </div>
         </div>
