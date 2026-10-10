@@ -1,3 +1,5 @@
+import { BACKGROUND_MODEL } from "../config/constants.js";
+import { recordUsage } from "../api/usage.js";
 import { getApiKey } from "../api/models.js";
 import { getDiary } from "./diary.js";
 import { saveMemoryCloud, loadMemories, deleteMemoryCloud } from "../api/supabase.js";
@@ -14,7 +16,7 @@ const MEMORY_TYPES = {
 };
 
 // 用便宜但夠用的模型做記憶提取
-const EXTRACT_MODEL = "google/gemini-2.5-flash";
+const EXTRACT_MODEL = BACKGROUND_MODEL;
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
 
@@ -119,6 +121,18 @@ export async function extractAndSaveMemory(
         if (!response.ok) return;
 
         const data = await response.json();
+
+        // 記錄用量（背景任務也計入，優先使用 OpenRouter 回傳的實際費用）
+        if (data?.usage) {
+            recordUsage({
+                model: data.model || BACKGROUND_MODEL,
+                pricingKey: BACKGROUND_MODEL,
+                cost: data.usage.cost,
+                inputTokens:  data.usage.prompt_tokens     || 0,
+                outputTokens: data.usage.completion_tokens || 0
+            });
+        }
+
         const text = data.choices?.[0]?.message?.content || "[]";
 
         // 解析 JSON（AI 有時會多包一層 markdown）
