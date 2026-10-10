@@ -1,3 +1,5 @@
+import { BACKGROUND_MODEL } from "../config/constants.js";
+import { recordUsage } from "../api/usage.js";
 /**
  * diary.js
  * 日記系統 — 聊天結束後自動從對話提取有意義的事
@@ -69,13 +71,25 @@ ${convo}
                 "Authorization": `Bearer ${apiKey}`
             },
             body: JSON.stringify({
-                model: "google/gemini-2.5-flash",
+                model: BACKGROUND_MODEL,
                 max_tokens: 300,
                 messages: [{ role: "user", content: prompt }]
             })
         });
 
         const data = await res.json();
+
+        // 記錄用量（背景任務也計入，優先使用 OpenRouter 回傳的實際費用）
+        if (data?.usage) {
+            recordUsage({
+                model: data.model || BACKGROUND_MODEL,
+                pricingKey: BACKGROUND_MODEL,
+                cost: data.usage.cost,
+                inputTokens:  data.usage.prompt_tokens     || 0,
+                outputTokens: data.usage.completion_tokens || 0
+            });
+        }
+
         const text = data?.choices?.[0]?.message?.content?.trim();
 
         if (!text || text === "無" || text.length < 5) return;
