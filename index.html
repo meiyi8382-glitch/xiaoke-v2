@@ -179,18 +179,14 @@ SETTINGS PANEL
         <div class="setting-group">
             <label>聊天模型
                 <select id="chatModelSelect">
-                    <option value="anthropic/claude-sonnet-5" selected>Claude Sonnet 5</option>
-                    <option value="anthropic/claude-opus-4">Claude Opus 4</option>
-                    <option value="anthropic/claude-sonnet-4-6">Claude Sonnet 4.6</option>
-                    <option value="anthropic/claude-sonnet-4-5">Claude Sonnet 4.5</option>
-                    <option value="anthropic/claude-sonnet-4">Claude Sonnet 4</option>
-                    <option value="openai/gpt-4o">GPT-4o</option>
-                    <option value="google/gemini-3.6-flash">Gemini 3.6 Flash</option>
-                    <option value="google/gemini-3.1-pro-preview">Gemini 3.1 Pro Preview</option>
-                    <option value="x-ai/grok-4.3">Grok 4.3</option>
-                    <option value="x-ai/grok-4.5">Grok 4.5</option>
-                    <option value="z-ai/glm-4.7">GLM 4.7</option>
-                    <option value="z-ai/glm-5">GLM 5</option>
+                    <option value="~anthropic/claude-sonnet-latest" selected>Claude Sonnet（自動最新）</option>
+                    <option value="~anthropic/claude-opus-latest">Claude Opus（自動最新）</option>
+                    <option value="~anthropic/claude-haiku-latest">Claude Haiku（自動最新）</option>
+                    <option value="openai/gpt-6-sol">GPT-6 Sol</option>
+                    <option value="google/gemini-3.8-flash">Gemini 3.8 Flash</option>
+                    <option value="x-ai/grok-4.7">Grok 4.7</option>
+                    <option value="z-ai/glm-5.3">GLM 5.3</option>
+                    <option value="deepseek/deepseek-v4.1-flash">DeepSeek V4.1 Flash</option>
                 </select>
             </label>
         </div>
@@ -198,10 +194,11 @@ SETTINGS PANEL
         <div class="setting-group">
             <label>快捷互動模型
                 <select id="companionModelSelect">
-    <option value="local" selected>本地模式</option>
-    <option value="google/gemini-2.5-flash">Gemini 2.5 Flash</option>
-    <option value="deepseek/deepseek-chat">DeepSeek Chat</option>
-</select>
+                    <option value="local" selected>本地模式</option>
+                    <option value="~anthropic/claude-haiku-latest">Claude Haiku（自動最新）</option>
+                    <option value="google/gemini-3.5-flash-lite">Gemini 3.5 Flash Lite</option>
+                    <option value="deepseek/deepseek-v4.1-flash">DeepSeek V4.1 Flash</option>
+                </select>
             </label>
         </div>
 
@@ -290,7 +287,7 @@ USAGE PANEL
         <div id="usageHistory"></div>
 
         <p style="font-size:11px;color:var(--text-soft);margin-top:16px;text-align:center;">
-            ⚠️ 費用為估算值，實際以 OpenRouter 帳單為準
+            💡 費用優先採用 OpenRouter 回報的實際扣費（缺少時以單價估算），最終以 OpenRouter 帳單為準
         </p>
 
     </div>
