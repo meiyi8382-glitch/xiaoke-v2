@@ -1,3 +1,5 @@
+import { BACKGROUND_MODEL } from "../config/constants.js";
+import { recordUsage } from "../api/usage.js";
 /**
  * chapters.js
  * 章節摘要系統
@@ -95,13 +97,25 @@ ${convo}
                 "Authorization": `Bearer ${apiKey}`
             },
             body: JSON.stringify({
-                model: "google/gemini-2.5-flash",
+                model: BACKGROUND_MODEL,
                 max_tokens: 400,
                 messages: [{ role: "user", content: prompt }]
             })
         });
 
         const data = await res.json();
+
+        // 記錄用量（背景任務也計入，優先使用 OpenRouter 回傳的實際費用）
+        if (data?.usage) {
+            recordUsage({
+                model: data.model || BACKGROUND_MODEL,
+                pricingKey: BACKGROUND_MODEL,
+                cost: data.usage.cost,
+                inputTokens:  data.usage.prompt_tokens     || 0,
+                outputTokens: data.usage.completion_tokens || 0
+            });
+        }
+
         const summary = data?.choices?.[0]?.message?.content?.trim();
 
         if (!summary || summary.length < 10) return;
