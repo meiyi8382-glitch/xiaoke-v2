@@ -1,3 +1,8 @@
+import {
+    DEFAULT_CHAT_MODEL,
+    DEFAULT_COMPANION_MODEL
+} from "../config/constants.js";
+
 export function initializeModelSystem() {
 console.log(
     "模型系統初始化完成"
@@ -8,7 +13,7 @@ return (
     localStorage.getItem(
         "chatModel"
     ) ||
-    "anthropic/claude-sonnet-4"
+    DEFAULT_CHAT_MODEL
 );
 }
 export function getCurrentCompanionModel() {
@@ -16,7 +21,7 @@ return (
     localStorage.getItem(
         "companionModel"
     ) ||
-    "local"
+    DEFAULT_COMPANION_MODEL
 );
 }
 export function getApiKey() {
