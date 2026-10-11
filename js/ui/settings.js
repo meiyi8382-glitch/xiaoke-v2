@@ -13,6 +13,14 @@ import {
 } from "../memory/memory.js";
 
 
+
+// 已儲存的模型若已不在下拉選單中（例如舊版模型被移除），改用預設值，
+// 避免 select 變成空值、之後存出一個無效的模型名稱
+function pickValidOption(selectEl, saved, fallback) {
+    const valid = Array.from(selectEl.options).some(o => o.value === saved);
+    return valid ? saved : fallback;
+}
+
 // ======================================
 // Load
 // ======================================
@@ -40,19 +48,19 @@ export async function loadSettings() {
         );
 
     if (chatModel) {
-        chatModel.value =
-            localStorage.getItem(
-                "chatModel"
-            ) ||
-            DEFAULT_CHAT_MODEL;
+        chatModel.value = pickValidOption(
+            chatModel,
+            localStorage.getItem("chatModel"),
+            DEFAULT_CHAT_MODEL
+        );
     }
 
     if (companionModel) {
-        companionModel.value =
-            localStorage.getItem(
-                "companionModel"
-            ) ||
-            DEFAULT_COMPANION_MODEL;
+        companionModel.value = pickValidOption(
+            companionModel,
+            localStorage.getItem("companionModel"),
+            DEFAULT_COMPANION_MODEL
+        );
     }
 
     if (apiKey) {
